@@ -1,4 +1,4 @@
-###1 .Striver's A2Z Sheet - Learn DSA from A to Z
+### 1 .Striver's A2Z Sheet - Learn DSA from A to Z
 Last updated : December 13, 2025
 This course is made for people who want to learn DSA from A to Z for free in a well-organised and structured manner
 
@@ -16,4 +16,11 @@ https://www.youtube.com/@NeetCode/playlists
 
 
 
-###4
+### 4. Awesome site to practice Aptitude questions and patterns 
+
+https://www.indiabix.com/
+
+
+### 5. Udemy course to clean fundamentals and basics by ZTM
+
+https://www.udemy.com/course/master-the-coding-interview-data-structures-algorithms/
