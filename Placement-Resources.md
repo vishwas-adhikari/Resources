@@ -1,8 +1,7 @@
 
-##Github Author : Vishwas S Adhikari 
-                  www.linkedin.com/in/vishwasadhikari
+## Github Author : Vishwas S Adhikari  |   www.linkedin.com/in/vishwasadhikari
 
-
+                
 
 ### 1 .Striver's A2Z Sheet - Learn DSA from A to Z
 Last updated : December 13, 2025
