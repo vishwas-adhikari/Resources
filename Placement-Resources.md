@@ -40,5 +40,10 @@ http://www.r-5.org/files/books/computers/overviews/patterns/V_Anton_Spraul-Think
 
 https://github.com/sumitsojha88/Placement-Preparation
 
+### 8. Aptitude and Reasoning 
+
+https://www.indiabix.com/
+
+
 
 
