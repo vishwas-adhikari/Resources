@@ -148,8 +148,85 @@ In our next discussion, we’ll move from "Injection" to **"Hijacking"**—explo
 
 ***
 
-**Vishwas S Adhikari**
-*Espress0*
 
+This is the fourth post in our series on Windows internals and security. In our last discussion, we explored **DLL Injection**, which is an active, "noisy" way of forcing code into a process. 
+
+Today, we look at its quieter, more deceptive cousin: **DLL Hijacking.**
+
+***
+
+
+# DLL Hijacking: The Art of Being Found
+
+While DLL Injection involves actively forcing a process to load malicious code using specific Windows APIs, **DLL Hijacking** is a passive technique. It doesn't force anything. Instead, it relies on the natural way Windows searches for files. 
+
+If DLL Injection is like breaking into a building and planting a bug, DLL Hijacking is like replacing the building's legitimate directory with a fake one so that the employees unknowingly walk into the wrong room.
+
+## How Windows Loads a DLL
+
+When a developer writes an application, they often need to load a library. Sometimes, they use the full path (e.g., `C:\Windows\System32\user32.dll`). But frequently, for the sake of simplicity or portability, they only specify the filename:
+
+`LoadLibrary("helper.dll");`
+
+When Windows sees this, it doesn't immediately know where the file is. It has to go looking for it. To do this, it follows a pre-defined **Search Order**:
+
+1.  **The Application’s Directory:** The folder where the `.exe` is located.
+2.  **System Directories:** Locations like `C:\Windows\System32`.
+3.  **The Windows Directory:** `C:\Windows`.
+4.  **The Current Working Directory.**
+5.  **Directories in the System PATH environment variable.**
+
+The most important rule is this: **Windows loads the first matching DLL it finds.** It doesn't check if the DLL is "official" or "safe"; it simply assumes that if the name matches, it's the right file.
+
+## The Opportunity for Hijacking
+
+The vulnerability exists because the **Application’s Directory** is checked first. 
+
+If a program expects to find a system DLL in the `System32` folder, but an attacker places a malicious DLL with the *exact same name* in the program’s local folder, Windows will find the attacker's version first and stop looking. 
+
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/9843de62-3192-4a6c-9227-fc019c14c52d" />
+
+
+### A Step-by-Step Scenario:
+Imagine an application located at:  
+`C:\ProgramFiles\VideoEditor\editor.exe`
+
+When you launch `editor.exe`, it tries to load a library called `helper.dll`. Normally, this file lives in a deep system folder. 
+
+However, an attacker puts their own malicious version of `helper.dll` right next to the editor:  
+`C:\ProgramFiles\VideoEditor\helper.dll` **(Malicious)**
+
+**The Result:**
+1.  The user runs `editor.exe`.
+2.  Windows looks in `C:\ProgramFiles\VideoEditor\` for the DLL.
+3.  It finds the attacker’s file immediately.
+4.  The DLL is loaded into memory, and its entry point (`DllMain`) executes.
+5.  The attacker’s code is now running inside a trusted application.
+
+## Why This is Dangerous
+
+DLL Hijacking is a favorite among attackers because it is incredibly stealthy. 
+
+*   **No Suspicious APIs:** Unlike injection, hijacking doesn't require calling "loud" functions like `CreateRemoteThread` or `WriteProcessMemory`. The application does all the work for the attacker.
+*   **Inherited Trust:** Because the malicious code is running inside a legitimate process, it inherits that process's permissions. If the application has network access or admin rights, the attacker does too.
+*   **Signed Binaries:** Attackers often use a technique called **DLL Side-loading**. They take a perfectly legitimate, digitally signed EXE (like an old version of an antivirus or a system tool) and bundle it with a malicious DLL. Because the EXE is "trusted" by the OS, it often bypasses security scans, even though it is carrying a hidden payload.
+
+## Real-World Relevance
+
+This isn't just a theoretical trick. DLL hijacking is commonly used in:
+*   **Persistence:** Malware can place a hijacked DLL in a folder of an application that starts every time the computer boots up.
+*   **Portable Apps:** Software that runs from a USB drive often loads DLLs from its own folder, making it a prime target for this technique.
+*   **Privilege Escalation:** If an installer or a system service (running as SYSTEM) loads a DLL insecurely, an attacker can gain full control of the machine.
+
+## Closing Thoughts
+
+DLL Hijacking is a classic example of an "Abuse of Design." The system isn't broken; it is simply working exactly as it was programmed to. By understanding the search order and the way Windows identifies libraries, we can better appreciate why specifying absolute paths and verifying file signatures is a critical part of secure software development.
+
+In our next post, we will wrap up this series by looking at how to **detect and prevent** these types of attacks, from both a developer's and a defender's perspective.
+
+***
+
+**Vishwas S Adhikari**  
+*Espress0*
 
 
