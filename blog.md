@@ -65,4 +65,91 @@ If an EXE calls a DLL, and that DLL runs code, then whoever controls the DLL con
 This is the fundamental logic behind many common attack vectors:
 
 
+# DLL Injection: How Code Hijacks Trusted Processes
+
+In the world of cybersecurity, "DLL Injection" is a term that comes up constantly. Whether you are analyzing a piece of sophisticated malware or studying how game cheats work, the core mechanism is often the same. 
+
+But what exactly is it? 
+
+Simply put, **DLL Injection is the act of forcing a running process to load and execute a DLL that it never intended to use.**
+
+## Why This Works (Connecting the Dots)
+
+To understand why this is possible, we have to look back at our mental model of process memory. We know that once a process (like `chrome.exe`) is running, it lives in its own "bubble" of RAM. Inside that bubble, it calls various DLLs to perform tasks.
+
+Because the operating system allows a process to load libraries dynamically while it is running, an attacker can exploit this flexibility. If an attacker can successfully "inject" their own malicious DLL into a trusted process, that code will execute with the same permissions and trust level as the original program.
+
+## Why Do Attackers Use DLL Injection?
+
+You might wonder: *“If an attacker already has code on the system, why not just run a file called malware.exe?”* 
+
+There are three primary reasons:
+
+### 1. Stealth and Evasion
+Security software and savvy users are very suspicious of unknown executables running in the background. However, they are much less likely to notice something unusual happening inside a trusted process like `explorer.exe` (the Windows taskbar and file manager) or a web browser. By hiding inside a legitimate process, the attacker becomes a ghost in the machine.
+
+### 2. Privilege Piggybacking
+Every process runs with a certain level of authority. If an attacker manages to inject a DLL into a process that has administrative privileges or special network access, the injected code inherits those same rights. It’s the digital equivalent of sneaking into a secure building by hiding in the delivery truck of a trusted vendor.
+
+### 3. API Hooking and Spying
+Once code is running inside a target process, it can see everything that process sees. It can intercept function calls (API Hooking), log every keystroke the user types into that specific app, or even modify the data the program is sending over the internet.
+
+---
+
+## The Standard DLL Injection Technique
+
+While there are many advanced ways to inject code, the most common "Standard" technique involves a specific sequence of Windows API calls. Here is exactly how an attacker orchestrates this hijack, step-by-step.
+
+### Step 1: Identifying the Target
+The attacker first chooses a target process that is already running. This could be something common like `notepad.exe` for testing, or something critical like `lsass.exe` for stealing credentials.
+
+### Step 2: Gaining Access (`OpenProcess`)
+The attacker’s program calls the `OpenProcess` function. This requests a "handle" (a digital key) from the operating system that allows the attacker to interact with the target process's memory.
+
+### Step 3: Clearing a Space (`VirtualAllocEx`)
+You can't just throw data into another process; you need to reserve a spot for it. The attacker uses `VirtualAllocEx` to "rent" a small amount of memory inside the target process. 
+
+### Step 4: Planting the Path (`WriteProcessMemory`)
+Surprisingly, the attacker doesn't usually write the *entire* malicious code into the target memory yet. Instead, they write the **file path** of their malicious DLL (e.g., `"C:\temp\malware.dll"`) into the space they just reserved.
+
+### Step 5: The Execution Trick (`CreateRemoteThread`)
+This is the "magic" step. The attacker uses a function called `CreateRemoteThread`. This tells the target process: *"Hey, start a new thread, and for that thread, run the 'LoadLibrary' function using the file path I just wrote into your memory."*
+
+The target process obeys. It sees a command to load a library, it sees the path to the attacker’s DLL, and it loads it—thinking it's just another standard system update or helper.
+
+---
+
+## The Final Result
+
+Once `LoadLibrary` is called within the target process, the malicious DLL is mapped into memory. Almost instantly, a special function inside the DLL called `DllMain` begins to execute. 
+
+**The memory of the target process now looks like this:**
+
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/7e8bd791-9b12-4db7-a4cc-20fe4776b311" />
+
+
+The attacker's code is now a part of the "trusted" process. It has full access to the program's memory, can stay hidden from the task manager, and can perform its malicious tasks indefinitely.
+
+## The Visual Summary
+
+If you were to map the flow, it looks like this:
+
+1.  **Attacker Program** finds **Target Process**.
+2.  **Attacker** opens a door into the **Target**.
+3.  **Attacker** reserves a "shelf" in the **Target's** room.
+4.  **Attacker** puts a note on that shelf with the address of the **Malicious DLL**.
+5.  **Attacker** tricks the **Target** into reading that note and loading the DLL.
+
+## Closing Thoughts
+
+DLL Injection is a perfect example of how the very features that make an operating system powerful and flexible can be turned against it. By understanding these low-level API interactions, we can begin to build better defenses and more effective detection tools.
+
+In our next discussion, we’ll move from "Injection" to **"Hijacking"**—exploring how attackers can exploit the way Windows *searches* for DLLs to run their code without using a single "remote thread" API call.
+
+***
+
+**Vishwas S Adhikari**
+*Espress0*
+
+
 
