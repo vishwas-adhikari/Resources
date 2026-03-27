@@ -226,7 +226,87 @@ In our next post, we will wrap up this series by looking at how to **detect and 
 
 ***
 
+***
+
+# DLL Proxying: The Stealthy Middleman
+
+When an attacker successfully hijacks a DLL or performs a side-loading attack, they face a significant hurdle. Modern applications are complex; they might expect hundreds of different functions from a single library. If an attacker replaces `version.dll` with a malicious version that only contains a "Hello World" payload, the application will attempt to call a legitimate function, find that it is missing, and crash instantly.
+
+A crash is "noisy." It alerts the user and the system administrator that something is wrong. To stay hidden, an attacker needs the application to keep running as if nothing happened. This is where **DLL Proxying** comes into play.
+
+## The Core Concept: The Functional Mask
+
+DLL Proxying is a technique where a malicious DLL acts as a middleman. It sits between the application and the original, legitimate DLL. Its job is twofold:
+1.  Execute the attacker’s malicious code.
+2.  Forward all legitimate function calls to the real library so the application never notices a difference.
+
+In this scenario, the attacker doesn’t just replace the library; they **mimic** it.
+
+## How the Proxy Flow Works
+
+In a standard hijacking scenario, the flow is broken. In a proxying scenario, the flow is preserved through a "forwarding" mechanism.
+
+### The Problem (Simple Hijacking)
+*   **App** calls `GetFileVersion()`.
+*   **App** loads `malicious_version.dll`.
+*   **Malicious DLL** doesn't have `GetFileVersion()`.
+*   **Result:** Application Crash.
+
+### The Solution (Proxying)
+*   **App** calls `GetFileVersion()`.
+*   **App** loads `malicious_version.dll`.
+*   **Malicious DLL** catches the call and immediately runs the attacker's payload.
+*   **Malicious DLL** then loads the *real* version of the library (often renamed to something like `real_version.dll`).
+*   **Malicious DLL** forwards the call for `GetFileVersion()` to the real library.
+*   **Real DLL** returns the correct data.
+*   **Result:** The attacker's code has run, and the application continues to function perfectly.
+
+## The Visual Mental Model
+
+At runtime, the architecture looks like a chain:
+
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/259f93c6-2e79-4bad-a58b-e3c96c324577" />
+
+
+
+The "Malicious Proxy" is essentially wearing the original DLL as a mask. It presents the correct face to the application while hiding its true nature behind the scenes.
+
+## Why This is the "Gold Standard" for Stealth
+
+DLL Proxying is preferred by advanced persistent threats (APTs) and sophisticated malware for three main reasons:
+
+1.  **Zero Visibility:** Because the application doesn't crash, the user has no reason to investigate. The computer feels "healthy."
+2.  **Persistence:** The proxy DLL stays on the disk. Every time the user opens the associated application, the malicious code runs again, and the application continues to work normally.
+3.  **Inherited Context:** Just like in injection, the proxy code runs within the memory space of the trusted application, inheriting its network access, file permissions, and digital trust.
+
+## Implementing the Proxy (Conceptually)
+
+From a developer’s perspective, creating a proxy DLL involves a few key steps:
+
+*   **Step 1: The Payload.** Inside the `DllMain` function (the entry point), the attacker places the code they want to run—whether that’s a reverse shell, a keylogger, or a credential stealer.
+*   **Step 2: The Load.** The malicious DLL is programmed to find and load the original, renamed DLL using `LoadLibrary`.
+*   **Step 3: The Export Forwarding.** This is the technical "magic." The attacker uses linker directives or manual function pointers to ensure that every function the app expects is "exported" by the proxy and redirected to the real DLL.
+
+## Hijacking vs. Side-loading vs. Proxying
+
+It is easy to get these terms confused, so let’s look at how they differ in behavior:
+
+| Technique | Behavior |
+| :--- | :--- |
+| **Hijacking** | Replacing a legitimate DLL in the search path. |
+| **Side-loading** | Bundling a legitimate EXE with a malicious DLL. |
+| **Proxying** | Replacing a DLL *and* forwarding calls to the original to prevent crashes. |
+
+## Final Thoughts
+
+DLL Proxying represents the peak of DLL-based attacks. It turns a destructive action (replacing a file) into a constructive one (acting as a bridge). By ensuring that the "victim" application remains stable, the attacker can remain embedded in a system for months or even years without detection.
+
+Understanding these layers—from the basic executable to the complex proxy—is essential for any defender. It teaches us that "it works" does not always mean "it's safe." 
+
+In our final post of this series, we will look at **Defense and Detection**: how can we actually stop these attacks from happening?
+
+***
+
 **Vishwas S Adhikari**  
 *Espress0*
-
 
