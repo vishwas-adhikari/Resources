@@ -308,7 +308,7 @@ In our final post of this series, we will look at **Defense and Detection**: how
 ***
 
 
-<img width="1024" height="428" alt="image" src="https://github.com/user-attachments/assets/b34ad437-fd31-4087-af3e-87dc10398882" />
+<img width="600" height="500" alt="image" src="https://github.com/user-attachments/assets/b34ad437-fd31-4087-af3e-87dc10398882" />
 
 **Vishwas S Adhikari**  
 *Espress0*
