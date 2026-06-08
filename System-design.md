@@ -25,3 +25,10 @@
 
          https://www.youtube.com/watch?v=i53Gi_K3o7I&list=PLot-Xpze53le35rQuIbRET3YwEtrcJfdt
 
+
+## 7. Learning DOCKERS 
+
+         https://www.youtube.com/watch?v=3c-iBn73dDE
+
+
+
