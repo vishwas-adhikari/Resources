@@ -630,3 +630,514 @@ While Java specifications are standardized, multiple organizations distribute th
 ---
 
 
+<img width="600" height="450" alt="image" src="https://github.com/user-attachments/assets/83d37343-06da-4e27-9d68-fbef3d87cc49" />
+
+
+### 1. Stack Memory
+The execution area. It manages method calls and tracks what your program is actively doing.
+
+*   **What it stores:**
+    *   Local variables.
+    *   Primitive values (like `int`, `double`, `boolean`).
+    *   Reference variables (the pointers/addresses of objects).
+*   **How it works (LIFO):**
+    *   Last In, First Out. Like a stack of plates.
+    *   Each method call pushes a new "frame" onto the stack.
+*   **Key Rules:**
+    *   **Thread-specific:** Every thread has its own private Stack.
+    *   **Automatic Cleanup:** When a method finishes, its frame is instantly popped off and deleted.
+    *   **No Access sharing:** A method cannot see or use variables in another method’s frame.
+
+ <img width="500" height="350" alt="image" src="https://github.com/user-attachments/assets/0d4b5b1a-99d3-4cb5-bfae-49b15310c16a" />
+
+
+#### Quick Stack Trace Example:
+```java
+void main() {
+    int i = 1;
+    foo(i);
+}
+void foo(int param) {
+    int k = 3;
+}
+```
+**Inside Stack Memory (during `foo` execution):**
+```
+[ foo() Frame:  param = 1, k = 3 ]  <-- Active (Top)
+[ main() Frame: i = 1            ]  <-- Waiting
+```
+When `foo()` finishes, its entire block disappears.
+
+---
+
+### 2. Heap Memory
+The dynamic storage area. It holds data that needs to stay alive across different method calls.
+
+*   **What it stores:**
+    *   All **Objects** (created using the `new` keyword).
+    *   All Arrays.
+*   **Key Rules:**
+    *   **Shared:** One single heap is shared among all running threads.
+    *   **Garbage Collected:** You do not delete objects manually. The Garbage Collector (GC) deletes them when they are no longer in use.
+    *   **Crash Condition:** If you create too many objects and the Heap runs out of space, Java crashes with an `OutOfMemoryError`.
+
+---
+
+<img width="500" height="350" alt="image" src="https://github.com/user-attachments/assets/eb99bed7-85fa-43df-b7e9-724643281a54" />
+
+
+### 3. Stack-to-Heap Relationship
+```
+STACK (Stores address)             HEAP (Stores actual object)
+┌────────────────┐                 ┌──────────────────────┐
+│  reff ─────────┼────────────────►│  Heap_Test Object    │
+└────────────────┘                 └──────────────────────┘
+```
+The **reference variable** (`reff`) lives on the Stack. It holds the memory address of the **actual object**, which lives on the Heap.
+
+---
+
+### 4. String Pool (SCP)
+A dedicated, protected storage space **inside the Heap** used to save memory.
+
+*   **The Goal:** Avoid creating duplicate String objects. If a string already exists in the pool, Java reuses it.
+
+#### The Golden Rule of Comparison:
+*   **`==`** compares the **Memory Address** (Are they pointing to the same spot?).
+*   **`.equals()`** compares the **Actual Text** (Are the characters identical?).
+
+---
+
+### 5. String Pool Allocation Mechanics (Memorize This)
+
+<img width="500" height="350" alt="image" src="https://github.com/user-attachments/assets/131aa4a4-3ac8-476e-960c-a8a29a713a62" />
+
+
+#### Case A: Using String Literals (String Pool)
+```java
+String s1 = "Hello";
+String s2 = "Hello";
+```
+*   `s1` creates `"Hello"` in the String Pool.
+*   `s2` sees `"Hello"` already exists in the pool, so it points to the exact same memory location.
+*   **`s1 == s2` is `true`** (same memory location).
+
+#### Case B: Using the `new` Keyword (Heap)
+```java
+String s3 = new String("Hi");
+String s4 = "Hi";
+```
+*   `new String("Hi")` forces Java to create a **brand-new object** in general Heap memory.
+*   `s4 = "Hi"` creates or reuses `"Hi"` directly inside the String Pool.
+*   **`s3 == s4` is `false`** (different memory locations).
+
+#### Case C: Using `.intern()` (Forcing the Pool)
+```java
+s3 = s3.intern();
+```
+*   The `.intern()` method looks at `s3` ("Hi"), searches the String Pool, and returns the memory address of the pool version.
+*   Now, `s3` points to the String Pool version of `"Hi"`.
+*   **`s3 == s4` is now `true`** (both point to the pool version).
+
+
+---
+
+# JAVA PROJECT STRUCTURE 
+
+---
+
+
+### 1. The Big Picture (Standard Directory Structure)
+In professional development, almost all Java projects use a tool called **Maven** to organize files. Here is what a standard project looks like:
+
+```
+my-app/
+│
+├── pom.xml                 <-- The Project Configuration (POM file)
+├── .gitignore              <-- A "Dot File"
+│
+└── src/                    <-- Source Code Directory
+    ├── main/               <-- Main Code (Production)
+    │   └── java/
+    │       └── com/company/app/Main.java  <-- Main File & Package
+    │
+    └── test/               <-- Test Code (Development Verification)
+        └── java/
+            └── com/company/app/MainTest.java
+```
+
+---
+
+### 2. The POM File (`pom.xml`)
+*   **What it is:** **P**roject **O**bject **M**odel.
+*   **Simple Definition:** The "recipe book" or "shopping list" of your project. Written in XML.
+*   **What it does:**
+    *   It tells Maven what external libraries (dependencies) your project needs (e.g., Spring Boot, Database drivers).
+    *   Maven reads this file, automatically downloads those libraries from the internet, and adds them to your project.
+    *   Saves you from manually downloading `.jar` files.
+
+---
+
+### 3. Main Code vs. Test Code
+Java separates production code from development tests.
+
+#### Main Code (`src/main/java`)
+*   The actual application code.
+*   This is the code that will eventually be packaged and delivered to the client or deployed to a server.
+
+#### Test Code (`src/test/java`)
+*   Code used to test the Main Code (e.g., Unit tests using JUnit).
+*   **Crucial Rule:** Test code is only run during development. When packaging the app for release, Maven automatically excludes the test code so the final app is smaller and cleaner.
+
+---
+
+### 4. The Main File
+*   **What it is:** The Java file that contains the entry point of the program:
+    ```java
+    public static void main(String[] args) { ... }
+    ```
+*   **What it does:** It is the starting line. When you run a Java application, the JVM looks for this specific file and method to begin execution.
+
+---
+
+### 5. Packages & Organization Naming
+*   **What a Package is:** A package is simply a folder structure used to group related classes together and avoid naming conflicts.
+
+#### How Companies Name Packages:
+*   Companies use the **Reverse Domain Name** convention.
+*   **Formula:** `domain_extension.company_name.project_name.module`
+*   **Examples:**
+    *   If Google makes a project named "maps", the package will be: `com.google.maps`
+    *   If Amazon makes a payment module, the package will be: `com.amazon.payment`
+*   **Why?** Because domain names are globally unique. This guarantees that your package names will never clash with another company's package names when libraries are combined.
+
+---
+
+### 6. The Maven Compiler
+*   **What it is:** A built-in plugin inside Maven.
+*   **What it does:**
+    *   It automates the process of compiling your entire project.
+    *   Instead of you manually running `javac File1.java File2.java`, the Maven compiler compiles all your `.java` files into `.class` files with a single command (`mvn compile`).
+    *   It also lets you specify which Java version (e.g., Java 17 or Java 21) the project should compile with inside the `pom.xml`.
+
+---
+
+### 7. Dot Files (e.g., `.gitignore`)
+*   **What they are:** Files that start with a dot (`.`). Operating systems (Windows, Linux, macOS) treat these as **hidden files** by default.
+*   **Purpose:** They are used to store configurations for external developer tools.
+*   **The most common example:** `.gitignore`
+    *   This file tells Git (version control) which local files to ignore.
+    *   For example, you do not want to upload compiled `.class` files, temporary folders (like `target/`), or local IDE configurations to GitHub. You list those folder names inside `.gitignore`.
+
+
+
+---
+
+
+# TYPE CONVERSIONS 
+
+---
+
+Here is how Java handles Type Conversion at the **byte and bit level**. 
+
+In Java, there are two types of conversion: **Widening (Implicit)** and **Narrowing (Explicit)**.
+
+---
+
+### 1. Widening Conversion (Implicit / Automatic)
+*   **What it is:** Converting a smaller data type to a larger data type (e.g., `byte` to `int`).
+*   **Safety:** 100% safe. No data loss can occur.
+*   **Byte-level mechanic:** **Sign Extension**. The JVM pads the extra bytes on the left with `0`s (for positive numbers) or `1`s (for negative numbers) to preserve the sign.
+
+#### Byte-Level Visualization (Positive Number)
+```java
+byte b = 5;
+int i = b; // Automatic widening
+```
+*   **`b` (1 Byte / 8 bits):**
+    ```
+    00000101
+    ```
+*   **`i` (4 Bytes / 32 bits):**
+    The JVM pads the left 24 bits with `0`s:
+    ```
+    00000000 00000000 00000000 00000101
+    ```
+
+#### Byte-Level Visualization (Negative Number)
+```java
+byte b = -5;
+int i = b; 
+```
+*   **`b` (1 Byte / 8 bits in Two's Complement):**
+    ```
+    11111011
+    ```
+*   **`i` (4 Bytes / 32 bits):**
+    The JVM performs sign extension, padding the left 24 bits with `1`s to keep the number negative:
+    ```
+    11111111 11111111 11111111 11111011
+    ```
+
+---
+
+### 2. Narrowing Conversion (Explicit Casting)
+*   **What it is:** Converting a larger data type to a smaller data type (e.g., `int` to `byte`).
+*   **Safety:** Unsafe. Can cause data corruption or unexpected values.
+*   **Byte-level mechanic:** **Truncation (Bit-Lopping)**. The JVM throws away the higher-order bytes and keeps only the lower-order bytes that fit into the target type.
+
+#### Scenario A: Safe Narrowing (Value fits in target range)
+```java
+int i = 50;
+byte b = (byte) i; // Explicit cast required
+```
+*   **`i` (32 bits):**
+    ```
+    00000000 00000000 00000000 00110010
+    ```
+*   **`b` (8 bits):**
+    The JVM throws away the first three bytes (24 bits) and keeps only the last byte:
+    ```
+    [thrown away]             00110010  --> Value is still 50.
+    ```
+
+#### Scenario B: Unsafe Narrowing (Value overflows target range)
+This is a classic placement test question.
+```java
+int i = 130;
+byte b = (byte) i; 
+System.out.println(b); // What is the output?
+```
+*   **`i` (32 bits) representation of 130:**
+    ```
+    00000000 00000000 00000000 10000010
+    ```
+*   **`b` (8 bits):**
+    The JVM truncates the first 24 bits, leaving only the last byte:
+    ```
+    [thrown away]             10000010
+    ```
+*   **The Result:** 
+    *   In an 8-bit signed byte, the leftmost bit is the sign bit. 
+    *   Since the leftmost bit is `1`, the JVM reads `10000010` as a negative number in Two's Complement.
+    *   `10000010` converts to **`-126`**.
+    *   **Output:** `-126` (Data has been corrupted/wrapped around).
+
+---
+
+### Summary Cheat Sheet for Interviews
+
+| Conversion Type | Direction | JVM Action | Risk |
+| :--- | :--- | :--- | :--- |
+| **Widening** | Small $\to$ Large | **Sign Extension** (Pads left bits with `0` or `1`) | None (Safe) |
+| **Narrowing** | Large $\to$ Small | **Truncation** (Chops off the leftmost bytes) | High (Data loss/Overflow) |
+
+
+### 1. Other Common Primitive Conversions
+
+#### A. `long` (64-bit) to `int` (32-bit) — Narrowing
+*   **What happens:** The JVM chops off (truncates) the leftmost 32 bits and keeps the rightmost 32 bits.
+
+```java
+long l = 4294967297L; // Binary: 00000000000000000000000000000001 00000000000000000000000000000001
+int i = (int) l;
+System.out.println(i); // Output: 1
+```
+*   *Why?* The upper 32 bits containing the first `1` are completely discarded. Only the lower 32 bits (which represent `1`) remain.
+
+#### B. `double` (64-bit) to `int` (32-bit) — Floating-Point to Integer
+*   **What happens:** This is a **truncation of the decimal part**, not rounding. The JVM simply discards everything after the decimal point.
+
+```java
+double d = 9.99;
+int i = (int) d;
+System.out.println(i); // Output: 9 (Not 10!)
+```
+
+---
+
+### 2. ASCII (American Standard Code for Information Interchange)
+
+*   **What it is:** An early 7-bit character encoding system that maps 128 characters (English letters, numbers, and basic symbols) to numbers from `0` to `127`.
+*   **Key Values to Memorize for Placements:**
+    *   **`'A'` to `'Z'`** $\to$ $65$ to $90$
+    *   **`'a'` to `'z'`** $\to$ $97$ to $122$
+    *   **`'0'` to `'9'`** $\to$ $48$ to $57$
+    *   **Space (`' '`)** $\to$ $32$
+
+```java
+char ch = 'A';
+int asciiValue = ch; // Implicit widening (char to int)
+System.out.println(asciiValue); // Output: 65
+
+char nextChar = (char)(asciiValue + 1); 
+System.out.println(nextChar);   // Output: B
+```
+
+---
+
+### 3. Unicode and UTF (Unicode Transformation Format)
+
+*   **The Problem with ASCII:** 128 slots are not enough to represent non-English characters (like Chinese, Hindi, or emojis).
+*   **The Solution (Unicode):** A global standard that assigns a unique number (a code point) to every character in every language.
+
+#### How Unicode relates to UTF and Java:
+*   **UTF-8:** A variable-width encoding (uses 1 to 4 bytes per character). It is the standard for web pages because it is backward-compatible with ASCII.
+*   **UTF-16 (Java's Choice):** Uses a fixed 2 bytes (16 bits) for most common characters. 
+*   **Java's `char` Memory Structure:**
+    *   A Java `char` uses **2 bytes (16 bits)** and is unsigned (range: $0$ to $65,535$).
+    *   Because Java uses UTF-16 internally, you can natively store international characters:
+    ```java
+    char hindiChar = 'अ'; // Valid in Java
+    ```
+
+---
+
+### 4. Booleans in Java (The Interview "Trap")
+
+In languages like C or C++, an integer value of `0` is considered `false`, and any non-zero value is considered `true`. 
+
+**Java does not allow this.**
+
+*   **Rule:** In Java, the `boolean` type (`true`/`false`) is completely incompatible with all other primitive types.
+*   You **cannot** cast an integer to a boolean, and you **cannot** cast a boolean to an integer.
+
+```java
+// int x = 1;
+// boolean flag = (boolean) x; // COMPILATION ERROR: Incompatible types
+
+// Correct Java logic:
+int x = 1;
+boolean flag = (x == 1); // Evaluates to true
+```
+
+
+---
+BIT MANIPULATION
+
+---
+
+Here is the complete guide to Bit Manipulation, condensed into simple, high-yield revision notes for placement rounds.
+
+---
+
+### Part 1: The Bitwise Operators (The Rules)
+
+| Operator | Name | Rule / Behavior | Key Property |
+| :--- | :--- | :--- | :--- |
+| **`&`** | **Bitwise AND** | Yields `1` only if both bits are `1`. | Clears bits. `X & 0 = 0` |
+| **`\|`** | **Bitwise OR** | Yields `1` if at least one bit is `1`. | Sets bits. `X \| 1 = 1` |
+| **`^`** | **Bitwise XOR** | Yields `1` if the bits are **different**. | Flipped behavior. `X ^ X = 0` and `X ^ 0 = X` |
+| **`~`** | **Bitwise NOT** | Inverts all bits (`0` becomes `1`, `1` becomes `0`). | Unary operator (takes one operand). |
+| **`<<`** | **Left Shift** | Shifts bits left, fills empty slots with `0`. | **`a << b`** is equivalent to $a \times 2^b$ |
+| **`>>`** | **Right Shift** | Shifts bits right, preserves the sign bit. | **`a >> b`** is equivalent to $a / 2^b$ |
+| **`>>>`**| **Unsigned Right Shift**| Shifts bits right, fills left slots with `0` regardless of sign. | Only used in Java, not C++. |
+
+---
+
+### Part 2: The "Big Four" Bit Operations
+
+For all operations below, we assume 0-based indexing from **right to left** (Least Significant Bit is index `0`).
+
+```
+Bits:    1  0  1  1  0  1  0
+Index:   6  5  4  3  2  1  0
+```
+
+#### 1. Get the $i$-th Bit (Find if it is 0 or 1)
+Shift the number right by `i` positions, and inspect the last bit using `& 1`.
+```java
+int bitValue = (n >> i) & 1;
+```
+
+#### 2. Set the $i$-th Bit (Make it 1, leave others alone)
+Use a bitwise OR (`|`) with a mask where only the $i$-th bit is 1.
+```java
+int result = n | (1 << i);
+```
+
+#### 3. Clear the $i$-th Bit (Make it 0, leave others alone)
+Create a mask where only the $i$-th bit is 0 (e.g., `1110111`), and perform a bitwise AND (`&`).
+```java
+int result = n & ~(1 << i);
+```
+
+#### 4. Toggle the $i$-th Bit (Flip 0 $\to$ 1 or 1 $\to$ 0)
+Use a bitwise XOR (`^`) with a mask where only the $i$-th bit is 1.
+```java
+int result = n ^ (1 << i);
+```
+
+---
+
+### Part 3: High-Yield Placement Tricks
+
+These are highly popular patterns in multiple-choice questions (MCQs) and coding tests.
+
+#### Trick 1: Check if a number is Even or Odd
+Instead of using modulo `n % 2 == 0`, look at the last bit. Any odd number must end in `1`.
+```java
+if ((n & 1) == 0) {
+    // Number is Even
+} else {
+    // Number is Odd
+}
+```
+
+#### Trick 2: Check if a number is a Power of 2
+Powers of 2 in binary contain exactly one `1` bit (e.g., $8 = 1000_2$, $16 = 10000_2$). 
+If you subtract 1, all bits flip (e.g., $7 = 0111_2$).
+```java
+boolean isPowerOfTwo = (n > 0) && ((n & (n - 1)) == 0);
+```
+
+#### Trick 3: Clear the lowest (rightmost) set bit
+Executing `n & (n - 1)` instantly turns off the lowest `1` bit in a binary number.
+*   *Use Case:* Count the number of set bits (Kernighan's Algorithm).
+```java
+int count = 0;
+while (n > 0) {
+    n = n & (n - 1); // Clears the lowest 1 bit
+    count++;
+}
+```
+
+#### Trick 4: Swap two variables without a third variable
+Uses the XOR self-canceling property (`X ^ X = 0`).
+```java
+int a = 5;
+int b = 9;
+
+a = a ^ b;
+b = a ^ b; // b becomes original a
+a = a ^ b; // a becomes original b
+```
+
+#### Trick 5: Find the unique (non-duplicate) number
+*   **Problem:** You are given an array where every number appears twice except one. Find the single number.
+*   **Logic:** XOR everything in the array. Duplicates will cancel each other out to `0`.
+```java
+int[] arr = {4, 1, 2, 1, 2};
+int unique = 0;
+for (int num : arr) {
+    unique ^= num; // XOR accumulation
+}
+System.out.println(unique); // Output: 4
+```
+
+
+---
+
+# TODO 
+
+---
+
+1. **For a standalone boolean variable:** 
+   * **Size:** It takes **4 bytes (32 bits)** of memory, behaving just like an `int`.
+   * **The Reason:** **CPU Optimization**. Modern processors read and write memory in 32-bit or 64-bit blocks (words). Treating a single boolean as a 32-bit integer allows the processor to read and execute it in a single clock cycle without executing extra bit-shifting instructions. Additionally, physical RAM is byte-addressable, not bit-addressable.
+
+2. **For boolean arrays (`boolean[]`):**
+   * **Size:** Each element takes **1 byte (8 bits)**.
+   * **The Reason:** **Memory Conservation**. If a boolean array with millions of elements padded every boolean to 32 bits, it would waste massive heap space. To prevent this, the JVM compiles and executes boolean arrays as `byte` arrays under the hood."
+
+---
